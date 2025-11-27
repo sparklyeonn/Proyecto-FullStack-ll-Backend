@@ -1,5 +1,6 @@
 package cl.ritmolab.ritmolab_backend.model;
 
-public class Role {
-    
+public enum Role {
+    ADMIN,
+    USER
 }
