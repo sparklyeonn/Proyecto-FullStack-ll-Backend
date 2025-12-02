@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://[IP PUBLICA O EL DOMINIO NO SEE]") // CORS debe ser configurado a la IP del EC2 o dominio
+@CrossOrigin(origins = "*") // Para pruebas, luego restringe a tu dominio/IP
 public class AuthController {
 
     @Autowired
@@ -27,7 +27,6 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // manejo de la respuesta del login
     public static class AuthResponse {
         public String jwt;
         public String username;
@@ -40,11 +39,9 @@ public class AuthController {
         }
     }
 
-    // Endpoint de "Registro"
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
         try {
-            // rol por defecto es USER: se maneja en UserService
             User newUser = userService.registerNewUser(
                     request.get("username"),
                     request.get("password")
@@ -55,25 +52,18 @@ public class AuthController {
         }
     }
 
-    // Endpoint de Login (aqui se genera el JWT!!!)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        
-        // 1. auntenticacion de Spring Security
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.get("username"), request.get("password"))
         );
         
-        // 2. obtener el principal
         UserDetails userDetails = (UserDetails) authentication.getPrincipal(); 
-        
-        // 3. obtener el rol del usuario de sus autoridades (puede ser admin o user)
         String role = userDetails.getAuthorities().iterator().next().getAuthority();
         
-        // 4. se genera el Token
-        final String jwt = jwtUtil.generateToken(userDetails, role);
+        // Corrección: pasar username en lugar de UserDetails
+        final String jwt = jwtUtil.generateToken(userDetails.getUsername(), role);
 
-        // 5. devuelve el JWT y el rol al frontend
         return ResponseEntity.ok(new AuthResponse(jwt, userDetails.getUsername(), role));
     }
 }
